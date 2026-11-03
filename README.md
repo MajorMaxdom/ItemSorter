@@ -101,7 +101,9 @@ Instead of placing and writing the sign by yourself, you can also look at the si
 * `/itemsorter source <name> [options]` - Place an `[ItemSource]` sign
 * `/itemsorter target <name> [options]` - Place an `[ItemTarget]` sign
 
-The options are the same as on the fourth line of the sign (e.g. `/itemsorter target ores o:10,mc,a`). The same rules as for placing the sign by hand apply (limits, ownership, etc.). The sign is placed at the side of the block you are looking at, which must be free; the top and bottom side can't be used.
+The options are the same as on the fourth line of the sign (e.g. `/itemsorter target ores o:10,mc,a`). The same rules as for placing the sign by hand apply (limits, ownership, etc.).
+
+To change an existing sign, look at the sign itself (or at the inventory block it is attached to) and run the same command again with the new name and options. The sign can also be changed between source and target this way. Persistent items of a target sign are kept. You can only edit your own signs. The sign is placed at the side of the block you are looking at, which must be free; the top and bottom side can't be used.
 
 I've also created a [short video](https://www.youtube.com/watch?v=1KBjjMT5_-0) demonstrating the plugin.
 

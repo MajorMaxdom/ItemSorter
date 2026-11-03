@@ -3,6 +3,7 @@ package com.selfcoders.itemsorter;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Container;
@@ -90,11 +91,33 @@ public class CommandHandler {
         }
 
         RayTraceResult rayTraceResult = player.rayTraceBlocks(6);
-        Block container = rayTraceResult == null ? null : rayTraceResult.getHitBlock();
+        Block hitBlock = rayTraceResult == null ? null : rayTraceResult.getHitBlock();
         BlockFace face = rayTraceResult == null ? null : rayTraceResult.getHitBlockFace();
 
-        if (container == null || !(container.getState() instanceof Container)) {
-            printError("You have to look at an inventory block (i.e. chest or hopper)!");
+        if (hitBlock == null) {
+            printError("You have to look at an inventory block (i.e. chest or hopper) or at an existing ItemSorter sign!");
+            return;
+        }
+
+        // Looking at an existing sign or at an inventory block with a sign attached to it: Edit the sign
+        Sign existingSign = null;
+        if (Tag.SIGNS.isTagged(hitBlock.getType())) {
+            existingSign = SignHelper.getSignFromBlock(hitBlock);
+            if (existingSign == null) {
+                printError("This is not an ItemSorter sign!");
+                return;
+            }
+        } else if (hitBlock.getState() instanceof Container) {
+            existingSign = SignHelper.getSignAttachedToBlock(hitBlock);
+        }
+
+        if (existingSign != null) {
+            editSign(player, tag, existingSign);
+            return;
+        }
+
+        if (!(hitBlock.getState() instanceof Container)) {
+            printError("You have to look at an inventory block (i.e. chest or hopper) or at an existing ItemSorter sign!");
             return;
         }
 
@@ -103,7 +126,7 @@ public class CommandHandler {
             return;
         }
 
-        Block signBlock = container.getRelative(face);
+        Block signBlock = hitBlock.getRelative(face);
         if (!signBlock.getType().isAir()) {
             printError("There is no free space for the sign at this side of the inventory block!");
             return;
@@ -115,13 +138,57 @@ public class CommandHandler {
         wallSign.setFacing(face);
         signBlock.setBlockData(wallSign, false);
 
-        // Let the normal sign creation logic (permissions, limits, database, other plugins) handle the new sign
+        if (!submitSign(player, signBlock, tag)) {
+            signBlock.setType(Material.AIR, false);
+        }
+    }
+
+    private void editSign(Player player, String tag, Sign sign) {
+        SignData oldData = new SignData(sign);
+        String oldType = oldData.isSource() ? SignHelper.TYPE_SOURCE : SignHelper.TYPE_TARGET;
+        Location location = sign.getLocation();
+
+        if (!player.getName().equalsIgnoreCase(oldData.player)) {
+            printError("You can only edit your own ItemSorter signs!");
+            return;
+        }
+
+        try {
+            Database database = plugin.getDatabase();
+            Set<Material> persistentMaterials = database.getPersistentMaterials(location);
+
+            // The sign is registered again by the regular sign handling, persistent items are kept
+            database.removeLocation(oldData.player, oldData.name, oldType, location);
+            plugin.removeSignLocation(location);
+
+            if (submitSign(player, sign.getBlock(), tag)) {
+                if (new SignData((Sign) sign.getBlock().getState()).persistent) {
+                    database.setPersistentMaterials(location, persistentMaterials);
+                }
+                return;
+            }
+
+            // Rejected: restore the old sign
+            database.addLocation(player, oldData.name, oldType, location, oldData.order);
+            database.setPersistentMaterials(location, persistentMaterials);
+            plugin.addSignLocation(location);
+        } catch (SQLException exception) {
+            plugin.getLogger().severe("Unable to edit sign: " + exception.getMessage());
+            printError("An error occurred while editing the sign!");
+        }
+    }
+
+    /**
+     * Let the normal sign creation logic (permissions, limits, database, other plugins) handle the new sign text and write it to the sign if accepted.
+     *
+     * @return true if the sign has been accepted
+     */
+    private boolean submitSign(Player player, Block signBlock, String tag) {
         SignChangeEvent event = new SignChangeEvent(signBlock, player, new String[]{tag, args[0], player.getName(), args.length == 2 ? args[1] : ""}, Side.FRONT);
         plugin.getServer().getPluginManager().callEvent(event);
 
         if (event.isCancelled()) {
-            signBlock.setType(Material.AIR, false);
-            return;
+            return false;
         }
 
         Sign sign = (Sign) signBlock.getState();
@@ -133,6 +200,8 @@ public class CommandHandler {
         // Sign should not be editable
         sign.setWaxed(true);
         sign.update();
+
+        return true;
     }
 
     private void persistent() {
@@ -248,8 +317,8 @@ public class CommandHandler {
     private void printHelp() {
         sender.sendMessage(ChatColor.YELLOW + "-----" + ChatColor.WHITE + " Actions " + ChatColor.YELLOW + "-----");
 
-        this.printUsage("source <name> [options]", "Place an [ItemSource] sign at the side of the inventory block you are looking at");
-        this.printUsage("target <name> [options]", "Place an [ItemTarget] sign at the side of the inventory block you are looking at (options as on the fourth line of the sign, e.g. a,m)");
+        this.printUsage("source <name> [options]", "Place an [ItemSource] sign at the side of the inventory block you are looking at (or change the sign you are looking at)");
+        this.printUsage("target <name> [options]", "Place an [ItemTarget] sign at the side of the inventory block you are looking at or change the sign you are looking at (options as on the fourth line of the sign, e.g. a,m)");
         this.printUsage("persistent <list|add <material>|remove <material>|clear>", "Manage the persistent items of the [ItemTarget] sign you are looking at");
 
         if (sender.hasPermission("itemsorter.command")) {
