@@ -75,6 +75,24 @@ To manage the list manually, look at the target sign and use the following comma
 * `/itemsorter persistent remove <material>` - Remove an item type
 * `/itemsorter persistent clear` - Remove all item types
 
+### All items mode
+
+Add `a` (short for "All") to the fourth line of a target sign to let the chest accept every item type from the connected source chests, without having to put any item into it first. No persistent items are needed for this.
+
+* Fourth line: `a` (can be combined with other options, e.g. `o:10,mc,a`)
+
+This is ideal for furnace systems and similar setups which output many different items that all have to be transported further.
+
+Target chests which are set up for a specific item type are always tried first. A chest with the `a` option only receives the items which no other matching chest could take (i.e. because it is full), so it also works as an overflow chest.
+
+### Split mode
+
+Add `m` (short for "Multiple") to the fourth line of several target signs to share the items equally between all of those chests instead of filling up the first one before using the next one.
+
+* Fourth line: `m` (can be combined with other options, e.g. `a,m`)
+
+All matching chests with the `m` option take turns, one item per transfer. A chest which is full is skipped. Chests without the `m` option keep their normal behavior and order. For example, put `a,m` on several target signs with the same name to distribute everything evenly between those chests.
+
 I've also created a [short video](https://www.youtube.com/watch?v=1KBjjMT5_-0) demonstrating the plugin.
 
 ### Target order

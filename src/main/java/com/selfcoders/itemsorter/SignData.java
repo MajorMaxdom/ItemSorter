@@ -11,6 +11,8 @@ public class SignData {
     Integer order = 0;
     Boolean multiChests = false;
     Boolean persistent = false;
+    Boolean allItems = false;
+    Boolean split = false;
 
     SignData(String[] lines) {
         if (lines.length >= 1) {
@@ -45,6 +47,12 @@ public class SignData {
                         break;
                     case "mc":// Multi chests
                         multiChests = true;
+                        break;
+                    case "a":// All items
+                        allItems = true;
+                        break;
+                    case "m":// Split items between all targets with this option
+                        split = true;
                         break;
                     case "p":// Persistent items
                         persistent = true;

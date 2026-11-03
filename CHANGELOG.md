@@ -6,6 +6,8 @@
 * Added command `/itemsorter persistent <list|add|remove|clear>` to manage the persistent items (new permission `itemsorter.persistent`, default: everyone)
 * Right-clicking a target sign with the `p` option lists the persistent items
 * The `/itemsorter` command no longer requires `itemsorter.command` in general, only the `remove-signs` action does
+* Added `a` option for target signs to transfer all items from the source chests into the target chest (e.g. for furnace systems)
+* Added `m` option for target signs to share the items equally between all target chests having this option
 * Use the non-deprecated sign side API
 
 ## [1.6] - 2025-06-19

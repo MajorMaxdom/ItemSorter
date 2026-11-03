@@ -18,6 +18,7 @@ public class InventoryHelper {
     private final boolean allowMultiChests;
     private final int maxMultiChestsBlocks;
     private final boolean transferSingleItemPerInterval;
+    private final Map<Location, Integer> splitCounters = new HashMap<>();
 
     InventoryHelper(ItemSorter plugin, boolean allowCrossWorldConnections, int maxDistance, boolean allowMultiChests, int maxMultiChestsBlocks, boolean transferSingleItemPerInterval) {
         this.plugin = plugin;
@@ -43,8 +44,8 @@ public class InventoryHelper {
         return inventories;
     }
 
-    Map<Material, List<Inventory>> getInventoriesForPerType(List<Location> signLocations) {
-        Map<Material, List<Inventory>> inventories = new HashMap<>();
+    TargetInventories getTargetInventories(List<Location> signLocations) {
+        TargetInventories inventories = new TargetInventories();
 
         for (Location signLocation : signLocations) {
             Block signBlock = signLocation.getBlock();
@@ -78,16 +79,28 @@ public class InventoryHelper {
             }
 
             SignData targetSignData = new SignData(sign);
+
+            if (targetSignData.split) {
+                for (Inventory blockInventory : blockInventories) {
+                    inventories.addSplit(blockInventory);
+                }
+            }
+
+            if (targetSignData.allItems) {
+                for (Inventory blockInventory : blockInventories) {
+                    inventories.addAllItems(blockInventory);
+                }
+
+                continue;
+            }
+
             if (targetSignData.persistent) {
                 try {
                     Set<Material> persistentMaterials = plugin.getDatabase().getPersistentMaterials(signLocation);
 
                     for (Inventory blockInventory : blockInventories) {
                         for (Material material : persistentMaterials) {
-                            List<Inventory> list = inventories.computeIfAbsent(material, key -> new ArrayList<>());
-                            if (!list.contains(blockInventory)) {
-                                list.add(blockInventory);
-                            }
+                            inventories.addAcceptedType(material, blockInventory);
                         }
                     }
                 } catch (SQLException exception) {
@@ -101,10 +114,7 @@ public class InventoryHelper {
                         continue;
                     }
 
-                    List<Inventory> list = inventories.computeIfAbsent(stack.getType(), key -> new ArrayList<>());
-                    if (!list.contains(blockInventory)) {
-                        list.add(blockInventory);
-                    }
+                    inventories.addAcceptedType(stack.getType(), blockInventory);
                 }
             }
         }
@@ -134,25 +144,37 @@ public class InventoryHelper {
 
         Location sourceLocation = sourceContainer.getLocation();
 
-        Map<Material, List<Inventory>> targetInventories = getInventoriesForPerType(targetSignLocations);
+        TargetInventories targetInventories = getTargetInventories(targetSignLocations);
+        targetInventories.allItems.remove(inventory);
 
         for (ItemStack stack : inventory.getContents()) {
             if (stack == null) {
                 continue;
             }
 
-            List<Inventory> targetInventoriesForType = targetInventories.get(stack.getType());
-            if (targetInventoriesForType == null) {
+            // Chests for the specific item type are tried first, chests accepting all items are the fallback
+            List<Inventory> targetInventoriesForType = new ArrayList<>(targetInventories.perType.getOrDefault(stack.getType(), Collections.emptyList()));
+            for (Inventory allItemsInventory : targetInventories.allItems) {
+                if (!targetInventoriesForType.contains(allItemsInventory)) {
+                    targetInventoriesForType.add(allItemsInventory);
+                }
+            }
+
+            if (targetInventoriesForType.isEmpty()) {
                 continue;
             }
 
             targetInventoriesForType = filterInventoriesByDistance(sourceLocation, targetInventoriesForType);
 
-            plugin.addItemTransfer(stack, inventory, targetInventoriesForType);
+            plugin.addItemTransfer(stack, inventory, targetInventoriesForType, targetInventories.split);
         }
     }
 
-    boolean moveItemToInventories(ItemStack itemStack, Inventory sourceInventory, List<Inventory> targetInventories) {
+    /**
+     * Move the item into the first target inventory which accepts it.
+     * Target inventories which are part of the split list are used in turns (per source inventory) instead of filling up the first one.
+     */
+    boolean moveItemToInventories(ItemStack itemStack, Inventory sourceInventory, List<Inventory> targetInventories, List<Inventory> splitInventories) {
         ItemStack addStack = itemStack.clone();
 
         // Only transfer a single item if true
@@ -164,7 +186,10 @@ public class InventoryHelper {
         // Clone item stack as it might be modified by Inventory.addItem()
         ItemStack removeStack = addStack.clone();
 
-        for (Inventory targetInventory : targetInventories) {
+        Location sourceLocation = sourceInventory.getLocation();
+        List<Inventory> orderedInventories = rotateSplitInventories(targetInventories, splitInventories, splitCounters.getOrDefault(sourceLocation, 0));
+
+        for (Inventory targetInventory : orderedInventories) {
             if (targetInventory.getHolder() == null) {
                 continue;
             }
@@ -174,11 +199,42 @@ public class InventoryHelper {
             // Item moved successfully?
             if (remainingItems.isEmpty() || remainingItems.get(0).getAmount() == 0) {
                 sourceInventory.removeItem(removeStack);
+
+                if (sourceLocation != null && splitInventories.contains(targetInventory)) {
+                    splitCounters.merge(sourceLocation, 1, Integer::sum);
+                }
+
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Rotate the split inventories among their own positions in the list, leaving all other inventories where they are.
+     */
+    static List<Inventory> rotateSplitInventories(List<Inventory> inventories, List<Inventory> splitInventories, int offset) {
+        List<Integer> positions = new ArrayList<>();
+        List<Inventory> group = new ArrayList<>();
+
+        for (int index = 0; index < inventories.size(); index++) {
+            if (splitInventories.contains(inventories.get(index))) {
+                positions.add(index);
+                group.add(inventories.get(index));
+            }
+        }
+
+        if (group.size() < 2) {
+            return inventories;
+        }
+
+        List<Inventory> rotated = new ArrayList<>(inventories);
+        for (int index = 0; index < positions.size(); index++) {
+            rotated.set(positions.get(index), group.get((index + offset) % group.size()));
+        }
+
+        return rotated;
     }
 
     List<Inventory> filterInventoriesByDistance(Location sourceLocation, List<Inventory> targetInventories) {

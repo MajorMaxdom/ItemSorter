@@ -133,7 +133,7 @@ public class ItemSorter extends JavaPlugin {
         signLocations.remove(location);
     }
 
-    void addItemTransfer(ItemStack itemStack, Inventory sourceInventory, List<Inventory> targetInventories) {
-        itemTransferTask.addTransfer(itemStack, sourceInventory, targetInventories);
+    void addItemTransfer(ItemStack itemStack, Inventory sourceInventory, List<Inventory> targetInventories, List<Inventory> splitInventories) {
+        itemTransferTask.addTransfer(itemStack, sourceInventory, targetInventories, splitInventories);
     }
 }

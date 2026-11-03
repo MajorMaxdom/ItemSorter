@@ -9,10 +9,12 @@ public class TransferItem {
     ItemStack stack;
     Inventory source;
     List<Inventory> targets;
+    List<Inventory> splitTargets;
 
-    TransferItem(ItemStack stack, Inventory source, List<Inventory> targets) {
+    TransferItem(ItemStack stack, Inventory source, List<Inventory> targets, List<Inventory> splitTargets) {
         this.stack = stack;
         this.source = source;
         this.targets = targets;
+        this.splitTargets = splitTargets;
     }
 }

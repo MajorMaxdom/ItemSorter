@@ -49,14 +49,14 @@ public class ItemTransferTask implements Runnable {
                 continue;
             }
 
-            if (inventoryHelper.moveItemToInventories(transferItem.stack, transferItem.source, transferItem.targets)) {
+            if (inventoryHelper.moveItemToInventories(transferItem.stack, transferItem.source, transferItem.targets, transferItem.splitTargets)) {
                 break;
             }
         }
     }
 
-    void addTransfer(ItemStack itemStack, Inventory sourceInventory, List<Inventory> targetInventories) {
-        TransferItem transferItem = new TransferItem(itemStack, sourceInventory, targetInventories);
+    void addTransfer(ItemStack itemStack, Inventory sourceInventory, List<Inventory> targetInventories, List<Inventory> splitInventories) {
+        TransferItem transferItem = new TransferItem(itemStack, sourceInventory, targetInventories, splitInventories);
 
         transfers.computeIfAbsent(sourceInventory.getLocation(), key -> new HashMap<>()).put(itemStack.getType(), transferItem);
     }
