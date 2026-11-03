@@ -4,6 +4,13 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.Container;
+import org.bukkit.block.data.type.WallSign;
+import org.bukkit.block.sign.Side;
+import org.bukkit.block.sign.SignSide;
+import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.command.CommandSender;
@@ -39,6 +46,12 @@ public class CommandHandler {
             case "help":
                 printHelp();
                 break;
+            case "source":
+                createSign(SignHelper.TAG_SOURCE);
+                break;
+            case "target":
+                createSign(SignHelper.TAG_TARGET);
+                break;
             case "persistent":
                 persistent();
                 break;
@@ -59,6 +72,67 @@ public class CommandHandler {
                 sender.sendMessage("Use " + ChatColor.GOLD + "/itemsorter" + ChatColor.WHITE + " to see a list of available actions");
                 break;
         }
+    }
+
+    private void createSign(String tag) {
+        String action = tag.equals(SignHelper.TAG_SOURCE) ? "source" : "target";
+
+        if (!(sender instanceof Player)) {
+            printError("This action can only be used by players!");
+            return;
+        }
+
+        Player player = (Player) sender;
+
+        if (args.length < 1 || args.length > 2) {
+            printError("Usage: /itemsorter " + action + " <name> [options]");
+            return;
+        }
+
+        RayTraceResult rayTraceResult = player.rayTraceBlocks(6);
+        Block container = rayTraceResult == null ? null : rayTraceResult.getHitBlock();
+        BlockFace face = rayTraceResult == null ? null : rayTraceResult.getHitBlockFace();
+
+        if (container == null || !(container.getState() instanceof Container)) {
+            printError("You have to look at an inventory block (i.e. chest or hopper)!");
+            return;
+        }
+
+        if (face != BlockFace.NORTH && face != BlockFace.SOUTH && face != BlockFace.EAST && face != BlockFace.WEST) {
+            printError("You have to look at the side of the inventory block, not at the top or bottom!");
+            return;
+        }
+
+        Block signBlock = container.getRelative(face);
+        if (!signBlock.getType().isAir()) {
+            printError("There is no free space for the sign at this side of the inventory block!");
+            return;
+        }
+
+        signBlock.setType(Material.OAK_WALL_SIGN, false);
+
+        WallSign wallSign = (WallSign) signBlock.getBlockData();
+        wallSign.setFacing(face);
+        signBlock.setBlockData(wallSign, false);
+
+        // Let the normal sign creation logic (permissions, limits, database, other plugins) handle the new sign
+        SignChangeEvent event = new SignChangeEvent(signBlock, player, new String[]{tag, args[0], player.getName(), args.length == 2 ? args[1] : ""}, Side.FRONT);
+        plugin.getServer().getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+            signBlock.setType(Material.AIR, false);
+            return;
+        }
+
+        Sign sign = (Sign) signBlock.getState();
+        SignSide signSide = sign.getSide(Side.FRONT);
+        for (int index = 0; index < 4; index++) {
+            signSide.setLine(index, event.getLine(index));
+        }
+
+        // Sign should not be editable
+        sign.setWaxed(true);
+        sign.update();
     }
 
     private void persistent() {
@@ -174,6 +248,8 @@ public class CommandHandler {
     private void printHelp() {
         sender.sendMessage(ChatColor.YELLOW + "-----" + ChatColor.WHITE + " Actions " + ChatColor.YELLOW + "-----");
 
+        this.printUsage("source <name> [options]", "Place an [ItemSource] sign at the side of the inventory block you are looking at");
+        this.printUsage("target <name> [options]", "Place an [ItemTarget] sign at the side of the inventory block you are looking at (options as on the fourth line of the sign, e.g. a,m)");
         this.printUsage("persistent <list|add <material>|remove <material>|clear>", "Manage the persistent items of the [ItemTarget] sign you are looking at");
 
         if (sender.hasPermission("itemsorter.command")) {

@@ -93,6 +93,15 @@ Add `m` (short for "Multiple") to the fourth line of several target signs to sha
 
 All matching chests with the `m` option take turns, one item per transfer. A chest which is full is skipped. Chests without the `m` option keep their normal behavior and order. For example, put `a,m` on several target signs with the same name to distribute everything evenly between those chests.
 
+### Creating signs with a command
+
+Instead of placing and writing the sign by yourself, you can also look at the side of an inventory block and let the plugin place the sign there (requires `itemsorter.create`):
+
+* `/itemsorter source <name> [options]` - Place an `[ItemSource]` sign
+* `/itemsorter target <name> [options]` - Place an `[ItemTarget]` sign
+
+The options are the same as on the fourth line of the sign (e.g. `/itemsorter target ores o:10,mc,a`). The same rules as for placing the sign by hand apply (limits, ownership, etc.). The sign is placed at the side of the block you are looking at, which must be free; the top and bottom side can't be used.
+
 I've also created a [short video](https://www.youtube.com/watch?v=1KBjjMT5_-0) demonstrating the plugin.
 
 ### Target order

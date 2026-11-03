@@ -97,6 +97,8 @@ public class ItemSorter extends JavaPlugin {
 
         if (args.length == 1) {
             completions.add("help");
+            completions.add("source");
+            completions.add("target");
             completions.add("persistent");
             if (sender.hasPermission("itemsorter.command")) {
                 completions.add("remove-signs");
