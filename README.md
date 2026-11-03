@@ -91,7 +91,7 @@ Add `m` (short for "Multiple") to the fourth line of several target signs to sha
 
 * Fourth line: `m` (can be combined with other options, e.g. `a,m`)
 
-All matching chests with the `m` option take turns, one item per transfer. A chest which is full is skipped. Chests without the `m` option keep their normal behavior and order. For example, put `a,m` on several target signs with the same name to distribute everything evenly between those chests.
+All matching chests with the `m` option take turns, one item per chest. In each transfer interval, one item is moved for every chest with the `m` option (i.e. 8 chests = 8 items per interval from each source chest). A chest which is full is skipped. Chests without the `m` option keep their normal behavior and order. For example, put `a,m` on several target signs with the same name to distribute everything evenly between those chests.
 
 ### Creating signs with a command
 

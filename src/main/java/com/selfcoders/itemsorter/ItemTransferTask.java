@@ -36,6 +36,25 @@ public class ItemTransferTask implements Runnable {
     }
 
     void transferItems(Map<Material, TransferItem> materialTransferItemMap) {
+        // Usually a single transfer per interval but one transfer for each split target (option "m") to move the items to all of them at once
+        int maxTransfers = 1;
+
+        for (int transfer = 0; transfer < maxTransfers; transfer++) {
+            TransferItem transferItem = transferNextItem(materialTransferItemMap);
+            if (transferItem == null) {
+                break;
+            }
+
+            maxTransfers = Math.max(maxTransfers, inventoryHelper.countSplitInventories(transferItem.targets, transferItem.splitTargets));
+        }
+    }
+
+    /**
+     * Move a single item to its targets.
+     *
+     * @return The transfer which has been executed or null if nothing was moved
+     */
+    private TransferItem transferNextItem(Map<Material, TransferItem> materialTransferItemMap) {
         Iterator<Map.Entry<Material, TransferItem>> iterator = materialTransferItemMap.entrySet().iterator();
 
         while (iterator.hasNext()) {
@@ -50,9 +69,11 @@ public class ItemTransferTask implements Runnable {
             }
 
             if (inventoryHelper.moveItemToInventories(transferItem.stack, transferItem.source, transferItem.targets, transferItem.splitTargets)) {
-                break;
+                return transferItem;
             }
         }
+
+        return null;
     }
 
     void addTransfer(ItemStack itemStack, Inventory sourceInventory, List<Inventory> targetInventories, List<Inventory> splitInventories) {

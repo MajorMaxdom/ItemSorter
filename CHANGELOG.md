@@ -7,7 +7,7 @@
 * Right-clicking a target sign with the `p` option lists the persistent items
 * The `/itemsorter` command no longer requires `itemsorter.command` in general, only the `remove-signs` action does
 * Added `a` option for target signs to transfer all items from the source chests into the target chest (e.g. for furnace systems)
-* Added `m` option for target signs to share the items equally between all target chests having this option
+* Added `m` option for target signs to share the items equally between all target chests having this option (one item per chest and transfer interval)
 * Added commands `/itemsorter source|target <name> [options]` to place signs at the inventory block you are looking at
 * Use the non-deprecated sign side API
 

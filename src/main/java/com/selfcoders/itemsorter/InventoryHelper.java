@@ -212,6 +212,21 @@ public class InventoryHelper {
     }
 
     /**
+     * Count how many of the target inventories are split inventories.
+     */
+    int countSplitInventories(List<Inventory> targetInventories, List<Inventory> splitInventories) {
+        int count = 0;
+
+        for (Inventory targetInventory : targetInventories) {
+            if (splitInventories.contains(targetInventory)) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /**
      * Rotate the split inventories among their own positions in the list, leaving all other inventories where they are.
      */
     static List<Inventory> rotateSplitInventories(List<Inventory> inventories, List<Inventory> splitInventories, int offset) {
