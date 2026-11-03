@@ -81,6 +81,8 @@ public class InventoryHelper {
             SignData targetSignData = new SignData(sign);
 
             if (targetSignData.split) {
+                inventories.setSplitMaxTransfers(targetSignData.splitMaxTransfers);
+
                 for (Inventory blockInventory : blockInventories) {
                     inventories.addSplit(blockInventory);
                 }
@@ -166,7 +168,7 @@ public class InventoryHelper {
 
             targetInventoriesForType = filterInventoriesByDistance(sourceLocation, targetInventoriesForType);
 
-            plugin.addItemTransfer(stack, inventory, targetInventoriesForType, targetInventories.split);
+            plugin.addItemTransfer(stack, inventory, targetInventoriesForType, targetInventories.split, targetInventories.splitMaxTransfers);
         }
     }
 
@@ -212,9 +214,9 @@ public class InventoryHelper {
     }
 
     /**
-     * Count how many of the target inventories are split inventories.
+     * Count how many transfers should be done per interval: one for each split inventory (limited by the maximum if greater than 0).
      */
-    int countSplitInventories(List<Inventory> targetInventories, List<Inventory> splitInventories) {
+    int countSplitInventories(List<Inventory> targetInventories, List<Inventory> splitInventories, int maxTransfers) {
         int count = 0;
 
         for (Inventory targetInventory : targetInventories) {
@@ -223,7 +225,7 @@ public class InventoryHelper {
             }
         }
 
-        return count;
+        return maxTransfers > 0 ? Math.min(count, maxTransfers) : count;
     }
 
     /**

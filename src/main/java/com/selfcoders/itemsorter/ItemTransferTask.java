@@ -45,7 +45,7 @@ public class ItemTransferTask implements Runnable {
                 break;
             }
 
-            maxTransfers = Math.max(maxTransfers, inventoryHelper.countSplitInventories(transferItem.targets, transferItem.splitTargets));
+            maxTransfers = Math.max(maxTransfers, inventoryHelper.countSplitInventories(transferItem.targets, transferItem.splitTargets, transferItem.splitMaxTransfers));
         }
     }
 
@@ -76,8 +76,8 @@ public class ItemTransferTask implements Runnable {
         return null;
     }
 
-    void addTransfer(ItemStack itemStack, Inventory sourceInventory, List<Inventory> targetInventories, List<Inventory> splitInventories) {
-        TransferItem transferItem = new TransferItem(itemStack, sourceInventory, targetInventories, splitInventories);
+    void addTransfer(ItemStack itemStack, Inventory sourceInventory, List<Inventory> targetInventories, List<Inventory> splitInventories, int splitMaxTransfers) {
+        TransferItem transferItem = new TransferItem(itemStack, sourceInventory, targetInventories, splitInventories, splitMaxTransfers);
 
         transfers.computeIfAbsent(sourceInventory.getLocation(), key -> new HashMap<>()).put(itemStack.getType(), transferItem);
     }

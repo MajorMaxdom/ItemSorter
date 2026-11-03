@@ -90,8 +90,9 @@ Target chests which are set up for a specific item type are always tried first. 
 Add `m` (short for "Multiple") to the fourth line of several target signs to share the items equally between all of those chests instead of filling up the first one before using the next one.
 
 * Fourth line: `m` (can be combined with other options, e.g. `a,m`)
+* Optionally limit the number of transfers per interval by adding a number: `m:4` (e.g. `a,m:4`)
 
-All matching chests with the `m` option take turns, one item per chest. In each transfer interval, one item is moved for every chest with the `m` option (i.e. 8 chests = 8 items per interval from each source chest). A chest which is full is skipped. Chests without the `m` option keep their normal behavior and order. For example, put `a,m` on several target signs with the same name to distribute everything evenly between those chests.
+All matching chests with the `m` option take turns, one item per chest. In each transfer interval, one item is moved for every chest with the `m` option (i.e. 8 chests = 8 items per interval from each source chest). With `m:<number>`, at most that many items are moved per interval; without a number, there is no limit. If several signs define a limit, the lowest one is used. A chest which is full is skipped. Chests without the `m` option keep their normal behavior and order. For example, put `a,m` on several target signs with the same name to distribute everything evenly between those chests.
 
 ### Creating signs with a command
 

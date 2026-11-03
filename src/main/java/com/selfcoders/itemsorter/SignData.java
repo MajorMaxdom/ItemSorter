@@ -13,6 +13,7 @@ public class SignData {
     Boolean persistent = false;
     Boolean allItems = false;
     Boolean split = false;
+    Integer splitMaxTransfers = 0;
 
     SignData(String[] lines) {
         if (lines.length >= 1) {
@@ -51,8 +52,13 @@ public class SignData {
                     case "a":// All items
                         allItems = true;
                         break;
-                    case "m":// Split items between all targets with this option
+                    case "m":// Split items between all targets with this option (optional: maximum number of transfers per interval)
                         split = true;
+                        try {
+                            splitMaxTransfers = Math.max(0, Integer.parseInt(value));
+                        } catch (Exception exception) {
+                            // no or invalid number, unlimited
+                        }
                         break;
                     case "p":// Persistent items
                         persistent = true;

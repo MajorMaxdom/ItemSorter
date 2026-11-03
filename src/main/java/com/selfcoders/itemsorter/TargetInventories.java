@@ -27,6 +27,12 @@ public class TargetInventories {
      */
     final List<Inventory> split = new ArrayList<>();
 
+    /**
+     * The maximum number of transfers per interval for the split inventories (0 = unlimited).
+     * If multiple signs define a limit, the lowest one is used.
+     */
+    int splitMaxTransfers = 0;
+
     void addAcceptedType(Material material, Inventory inventory) {
         List<Inventory> list = perType.computeIfAbsent(material, key -> new ArrayList<>());
         if (!list.contains(inventory)) {
@@ -37,6 +43,12 @@ public class TargetInventories {
     void addAllItems(Inventory inventory) {
         if (!allItems.contains(inventory)) {
             allItems.add(inventory);
+        }
+    }
+
+    void setSplitMaxTransfers(int maxTransfers) {
+        if (maxTransfers > 0 && (splitMaxTransfers == 0 || maxTransfers < splitMaxTransfers)) {
+            splitMaxTransfers = maxTransfers;
         }
     }
 
